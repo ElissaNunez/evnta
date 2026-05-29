@@ -1,0 +1,9 @@
+export { Hero } from './Hero';
+export { HowItWorks } from './HowItWorks';
+export { EventBuilder } from './EventBuilder';
+export { ServiceCategories } from './ServiceCategories';
+export { FeaturedProviders } from './FeaturedProviders';
+export { Testimonials } from './Testimonials';
+export { Pricing } from './Pricing';
+export { CTABanner } from './CTABanner';
+export { Footer } from './Footer';
