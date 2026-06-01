@@ -57,23 +57,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function loadProfile(userId: string) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
 
-    if (profile) {
+  if (error || !profile) {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+
+    if (authUser) {
       setUser({
-        id: userId,
-        email: profile.email,
-        name: profile.name,
-        role: profile.role as 'client' | 'provider' | 'admin',
-        createdAt: profile.created_at,
+        id: authUser.id,
+        email: authUser.email || '',
+        name: authUser.user_metadata?.name || authUser.email || 'Usuario',
+        role: authUser.user_metadata?.role || 'client',
+        createdAt: authUser.created_at,
       });
     }
+
     setIsLoading(false);
+    return;
   }
+
+  setUser({
+    id: userId,
+    email: profile.email,
+    name: profile.name,
+    role: profile.role as 'client' | 'provider' | 'admin',
+    createdAt: profile.created_at,
+  });
+
+  setIsLoading(false);
+}
 
   async function login(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
