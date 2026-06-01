@@ -56,14 +56,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function loadProfile(userId: string) {
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
+async function loadProfile(userId: string) {
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
 
-  if (error || !profile) {
+    if (profile) {
+      setUser({
+        id: userId,
+        email: profile.email,
+        name: profile.name,
+        role: profile.role || 'client',
+        createdAt: profile.created_at || '',
+      });
+      return;
+    }
+
     const { data: { user: authUser } } = await supabase.auth.getUser();
 
     if (authUser) {
@@ -71,26 +82,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: authUser.id,
         email: authUser.email || '',
         name: authUser.user_metadata?.name || authUser.email || 'Usuario',
-        role: authUser.user_metadata?.role || 'client',
+        role: 'client',
         createdAt: authUser.created_at,
       });
     }
-
+  } catch (error) {
+    console.error('Error loading profile:', error);
+  } finally {
     setIsLoading(false);
-    return;
   }
-
-  setUser({
-    id: userId,
-    email: profile.email,
-    name: profile.name,
-    role: profile.role as 'client' | 'provider' | 'admin',
-    createdAt: profile.created_at,
-  });
-
-  setIsLoading(false);
 }
-
   async function login(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: 'Correo o contrasena incorrectos' };
