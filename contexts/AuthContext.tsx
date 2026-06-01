@@ -120,28 +120,28 @@ async function loadProfile(userId: string) {
     if (authError) return { error: authError.message };
     return {};
   }
-
-  async function registerProvider(data: RegisterProviderData) {
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: {
-          name: data.name,
-          role: 'provider',
-          phone: data.phone || '',
-          city: data.city || '',
-          business_name: data.businessName,
-          category: data.category,
-        },
+async function registerProvider(data: RegisterProviderData) {
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email: data.email,
+    password: data.password,
+    options: {
+      data: {
+        name: data.name,
+        role: 'provider',
+        phone: data.phone || '',
+        city: data.city || '',
+        business_name: data.businessName,
+        category: data.category,
       },
-    });
+    },
+  });
 
-    if (authError) return { error: authError.message };
+  if (authError) return { error: authError.message };
 
-    // Create provider record if user created
-    if (authData.user) {
-      await supabase.from('providers').insert({
+  if (authData.user) {
+    const { error: providerError } = await supabase
+      .from('providers')
+      .insert({
         user_id: authData.user.id,
         business_name: data.businessName,
         category: data.category,
@@ -151,13 +151,18 @@ async function loadProfile(userId: string) {
         plan: 'free',
         commission_rate: 10,
         trial_active: true,
-        trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        trial_ends_at: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
       });
-    }
 
-    return {};
+    if (providerError) {
+      return { error: providerError.message };
+    }
   }
 
+  return {};
+}
   return (
     <AuthContext.Provider
       value={{
