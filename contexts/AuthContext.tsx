@@ -137,29 +137,34 @@ async function registerProvider(data: RegisterProviderData) {
   });
 
   if (authError) return { error: authError.message };
+  if (!authData.user) return { error: 'No se pudo crear el usuario' };
 
-  if (authData.user) {
-    const { error: providerError } = await supabase
-      .from('providers')
-      .insert({
-        user_id: authData.user.id,
-        business_name: data.businessName,
-        category: data.category,
-        phone: data.phone || '',
-        city: data.city || '',
-        is_active: true,
-        plan: 'free',
-        commission_rate: 10,
-        trial_active: true,
-        trial_ends_at: new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-      });
+  const { error: profileError } = await supabase.from('profiles').upsert({
+    id: authData.user.id,
+    email: data.email,
+    name: data.name,
+    phone: data.phone || '',
+    city: data.city || '',
+    role: 'provider',
+  });
 
-    if (providerError) {
-      return { error: providerError.message };
-    }
-  }
+  if (profileError) return { error: profileError.message };
+
+  const { error: providerError } = await supabase.from('providers').insert({
+    user_id: authData.user.id,
+    business_name: data.businessName,
+    category: data.category,
+    phone: data.phone || '',
+    email: data.email,
+    city: data.city || '',
+    is_active: true,
+    plan: 'free',
+    commission_rate: 10,
+    trial_active: true,
+    trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  });
+
+  if (providerError) return { error: providerError.message };
 
   return {};
 }
