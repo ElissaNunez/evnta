@@ -65,19 +65,18 @@ export function RegisterClientPage() {
         phone: formData.phone,
         city: formData.city,
       });
-      if (regError) {
+if (regError) {
   setError(regError || 'Error al registrar. Intenta de nuevo.');
   setIsLoading(false);
   return;
 }
 
-      navigate('/onboarding-cliente');
-      }
-    } catch (err: any) {
-      setIsLoading(false);
-      setError(err.message || 'Error al registrar. Intenta de nuevo.');
-    }
-  };
+navigate('/onboarding-cliente');
+} catch (err: any) {
+  setIsLoading(false);
+  setError(err.message || 'Error al registrar. Intenta de nuevo.');
+}
+    };
 
   return (
     <div className="min-h-screen bg-transparent flex items-center justify-center p-4 pt-20">
