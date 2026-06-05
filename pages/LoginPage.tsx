@@ -24,12 +24,12 @@ export function LoginPage() {
     const { error: loginError } = await login(email, password);
 
     if (loginError) {
-      setError(loginError);
-    } else {
-      navigate('/explorar');
-    }
+  setError(loginError);
+  setIsLoading(false);
+  return;
+}
 
-    setIsLoading(false);
+window.location.href = '/cliente/dashboard';
   };
 
   return (
