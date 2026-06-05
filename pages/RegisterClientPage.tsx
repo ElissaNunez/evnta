@@ -55,7 +55,7 @@ export function RegisterClientPage() {
     setIsLoading(true);
     setError('');
     
-    await new Promise(resolve => setTimeout(resolve, 1500));
+
     
     try {
       const { error: regError } = await registerClient({
@@ -65,11 +65,13 @@ export function RegisterClientPage() {
         phone: formData.phone,
         city: formData.city,
       });
-      setIsLoading(false);
       if (regError) {
-        setError(regError || 'Error al registrar. Intenta de nuevo.');
-      } else {
-        navigate('/onboarding-cliente');
+  setError(regError || 'Error al registrar. Intenta de nuevo.');
+  setIsLoading(false);
+  return;
+}
+
+      navigate('/onboarding-cliente');
       }
     } catch (err: any) {
       setIsLoading(false);
