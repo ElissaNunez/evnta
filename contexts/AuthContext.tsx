@@ -97,7 +97,7 @@ async function loadProfile(userId: string) {
     email,
     password,
   });
-
+console.log('LOGIN RESULT', error);
   if (error) return { error: 'Correo o contraseña incorrectos' };
 
   
