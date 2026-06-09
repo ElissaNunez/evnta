@@ -16,20 +16,27 @@ export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
+    const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setError('');
 
+  try {
     const { error: loginError } = await login(email, password);
 
-    if (loginError) {
-  setError(loginError);
-  setIsLoading(false);
-  return;
-}
+    setIsLoading(false);
 
-window.location.href = '/cliente/dashboard';
+    if (loginError) {
+      setError(loginError);
+      return;
+    }
+
+    window.location.href = '/cliente/dashboard';
+
+  } catch (err: any) {
+    setIsLoading(false);
+    setError(err.message || 'Error al iniciar sesión');
+  }
   };
 
   return (
