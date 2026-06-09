@@ -60,13 +60,14 @@ async function loadProfile(userId: string) {
   console.log('LOAD PROFILE', userId); 
   
   try {
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
-
-    console.log('PROFILE RESULT', profile);
+    
+console.log('PROFILE ERROR', profileError);
+console.log('PROFILE RESULT', profile);
     if (profile) {
       setUser({
         id: userId,
