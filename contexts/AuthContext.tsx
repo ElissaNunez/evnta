@@ -93,10 +93,19 @@ async function loadProfile(userId: string) {
   }
 }
   async function login(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: 'Correo o contrasena incorrectos' };
-    return {};
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) return { error: 'Correo o contraseña incorrectos' };
+
+  if (data.user) {
+    await loadProfile(data.user.id);
   }
+
+  return {};
+}
 
   async function logout() {
     await supabase.auth.signOut();
