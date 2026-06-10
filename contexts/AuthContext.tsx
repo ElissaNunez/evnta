@@ -103,7 +103,7 @@ async function loadProfile(userId: string) {
 }
 
   
-}
+
   async function login(email: string, password: string) {
   const { error } = await supabase.auth.signInWithPassword({
     email,
