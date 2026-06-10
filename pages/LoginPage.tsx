@@ -31,7 +31,7 @@ export function LoginPage() {
       return;
     }
 
-    window.location.href = '/cliente/dashboard';
+    navigate('/cliente/dashboard', { replace: true });
 
   } catch (err: any) {
     setIsLoading(false);
