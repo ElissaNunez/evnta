@@ -57,32 +57,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
 async function loadProfile(userId: string) {
-  console.log('LOAD PROFILE', userId); 
-  setIsLoading(false);
+  console.log('LOAD PROFILE', userId);
 
-const { data: { user: authUser } } = await supabase.auth.getUser();
-
-if (authUser) {
-  setUser({
-    id: authUser.id,
-    email: authUser.email || '',
-    name: authUser.email || 'Usuario',
-    role: 'client',
-    createdAt: authUser.created_at,
-  });
-
-  return;
-}
+  // 1. PRIMERO intentar leer de la tabla profiles
   try {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
-    
-console.log('PROFILE ERROR', profileError);
-console.log('PROFILE RESULT', profile);
+
+    console.log('PROFILE ERROR', profileError);
+    console.log('PROFILE RESULT', profile);
+
     if (profile) {
+      // ✅ Si encontró el perfil en la tabla, usar esos datos
       setUser({
         id: userId,
         email: profile.email,
@@ -90,25 +79,30 @@ console.log('PROFILE RESULT', profile);
         role: profile.role || 'client',
         createdAt: profile.created_at || '',
       });
-      return;
+      setIsLoading(false);  // ← Solo aquí quitamos el loading
+      return;  // ← Sale porque ya encontró todo
     }
-
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-
-    if (authUser) {
-      setUser({
-        id: authUser.id,
-        email: authUser.email || '',
-        name: authUser.user_metadata?.name || authUser.email || 'Usuario',
-        role: 'client',
-        createdAt: authUser.created_at,
-      });
-    }
-  } catch (error) {
-    console.error('Error loading profile:', error);
-  } finally {
-    setIsLoading(false);
+  } catch (e) {
+    console.log('Error leyendo profiles:', e);
   }
+
+  // 2. Si NO encontró en profiles, usar datos de auth como fallback
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  
+  if (authUser) {
+    setUser({
+      id: authUser.id,
+      email: authUser.email || '',
+      name: authUser.user_metadata?.name || authUser.email || 'Usuario',
+      role: 'client',
+      createdAt: authUser.created_at,
+    });
+  }
+
+  setIsLoading(false);  // ← Ahora sí quitamos el loading al final
+}
+
+  
 }
   async function login(email: string, password: string) {
   const { error } = await supabase.auth.signInWithPassword({
