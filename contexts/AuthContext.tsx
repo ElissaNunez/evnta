@@ -58,7 +58,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 async function loadProfile(userId: string) {
   console.log('LOAD PROFILE', userId); 
-  
+  setIsLoading(false);
+
+const { data: { user: authUser } } = await supabase.auth.getUser();
+
+if (authUser) {
+  setUser({
+    id: authUser.id,
+    email: authUser.email || '',
+    name: authUser.email || 'Usuario',
+    role: 'client',
+    createdAt: authUser.created_at,
+  });
+
+  return;
+}
   try {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
