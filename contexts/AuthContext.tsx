@@ -59,13 +59,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 async function loadProfile(userId: string) {
   console.log('LOAD PROFILE', userId);
 
+  // Timeout de 3 segundos para no quedarse esperando
+  const timeout = new Promise((_, reject) => 
+    setTimeout(() => reject(new Error('Timeout')), 3000)
+  );
+
   // 1. PRIMERO intentar leer de la tabla profiles
   try {
-    const { data: profile, error: profileError } = await supabase
+    const supabaseQuery = supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
+
+    const result: any = await Promise.race([supabaseQuery, timeout]);
+    
+    const profile = result.data;
+    const profileError = result.error;
 
     console.log('PROFILE ERROR', profileError);
     console.log('PROFILE RESULT', profile);
@@ -76,11 +86,11 @@ async function loadProfile(userId: string) {
         id: userId,
         email: profile.email,
         name: profile.name,
-        role: profile.role || 'client',
+        role: profile.role || 'cliente',
         createdAt: profile.created_at || '',
       });
-      setIsLoading(false);  // ← Solo aquí quitamos el loading
-      return;  // ← Sale porque ya encontró todo
+      setIsLoading(false); // ← Solo aquí quitamos el loading
+      return; // ← Sale porque ya encontró todo
     }
   } catch (e) {
     console.log('Error leyendo profiles:', e);
@@ -94,15 +104,13 @@ async function loadProfile(userId: string) {
       id: authUser.id,
       email: authUser.email || '',
       name: authUser.user_metadata?.name || authUser.email || 'Usuario',
-      role: 'client',
+      role: 'cliente',
       createdAt: authUser.created_at,
     });
   }
 
-  setIsLoading(false);  // ← Ahora sí quitamos el loading al final
+  setIsLoading(false); // ← Ahora sí quitamos el loading al final
 }
-
-  
 
   async function login(email: string, password: string) {
   const { error } = await supabase.auth.signInWithPassword({
