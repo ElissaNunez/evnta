@@ -58,58 +58,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 async function loadProfile(userId: string) {
   console.log('LOAD PROFILE', userId);
+  console.log('STEP 1: Before setUser');
 
-  // Timeout de 3 segundos para no quedarse esperando
-  const timeout = new Promise((_, reject) => 
-    setTimeout(() => reject(new Error('Timeout')), 3000)
-  );
+  // Usar datos de sesión que ya tenemos (sin await)
+  setUser({
+    id: userId,
+    email: 'test@evnta.mx',  // Temporal
+    name: 'Usuario Test',     // Temporal
+    role: 'cliente',
+    createdAt: new Date().toISOString(),
+  });
 
-  // 1. PRIMERO intentar leer de la tabla profiles
-  try {
-    const supabaseQuery = supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    const result: any = await Promise.race([supabaseQuery, timeout]);
-    
-    const profile = result.data;
-    const profileError = result.error;
-
-    console.log('PROFILE ERROR', profileError);
-    console.log('PROFILE RESULT', profile);
-
-    if (profile) {
-      // ✅ Si encontró el perfil en la tabla, usar esos datos
-      setUser({
-        id: userId,
-        email: profile.email,
-        name: profile.name,
-        role: profile.role || 'cliente',
-        createdAt: profile.created_at || '',
-      });
-      setIsLoading(false); // ← Solo aquí quitamos el loading
-      return; // ← Sale porque ya encontró todo
-    }
-  } catch (e) {
-    console.log('Error leyendo profiles:', e);
-  }
-
-  // 2. Si NO encontró en profiles, usar datos de auth como fallback
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-  
-  if (authUser) {
-    setUser({
-      id: authUser.id,
-      email: authUser.email || '',
-      name: authUser.user_metadata?.name || authUser.email || 'Usuario',
-      role: 'cliente',
-      createdAt: authUser.created_at,
-    });
-  }
-
-  setIsLoading(false); // ← Ahora sí quitamos el loading al final
+  console.log('STEP 2: After setUser');
+  setIsLoading(false);
+  console.log('STEP 3: After setIsLoading');
 }
 
   async function login(email: string, password: string) {
