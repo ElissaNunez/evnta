@@ -57,21 +57,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
 async function loadProfile(userId: string) {
-  console.log('LOAD PROFILE', userId);
-  console.log('STEP 1: Before setUser');
+    console.log('LOAD PROFILE', userId);
 
-  // Usar datos de sesión que ya tenemos (sin await)
+  try {
+    // Consulta sin .single() para evitar errores
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId);
+
+    console.log('SUPABASE DATA', data);
+    console.log('SUPABASE ERROR', error);
+
+    if (data && data.length > 0) {
+      const profile = data[0];
+      setUser({
+        id: userId,
+        email: profile.email,
+        name: profile.name,
+        role: profile.role || 'cliente',
+        createdAt: profile.created_at || '',
+      });
+      setIsLoading(false);
+      return;
+    }
+  } catch (e) {
+    console.log('Error supabase:', e);
+  }
+
+  // Fallback
   setUser({
     id: userId,
-    email: 'test@evnta.mx',  // Temporal
-    name: 'Usuario Test',     // Temporal
+    email: 'test@evnta.mx',
+    name: 'Usuario Test',
     role: 'cliente',
     createdAt: new Date().toISOString(),
   });
-
-  console.log('STEP 2: After setUser');
   setIsLoading(false);
-  console.log('STEP 3: After setIsLoading');
+
 }
 
   async function login(email: string, password: string) {
