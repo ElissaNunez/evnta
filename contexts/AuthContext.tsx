@@ -57,17 +57,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
 async function loadProfile(userId: string) {
-    console.log('LOAD PROFILE', userId);
+  console.log('LOAD PROFILE', userId);
 
   try {
-    // Consulta sin .single() para evitar errores
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId);
+    // Usar fetch directo a la API REST de Supabase
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+    });
 
-    console.log('SUPABASE DATA', data);
-    console.log('SUPABASE ERROR', error);
+    console.log('FETCH STATUS', response.status);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('FETCH DATA', data);
 
     if (data && data.length > 0) {
       const profile = data[0];
@@ -81,11 +92,12 @@ async function loadProfile(userId: string) {
       setIsLoading(false);
       return;
     }
-  } catch (e) {
-    console.log('Error supabase:', e);
+  } catch (e: any) {
+    console.log('FETCH ERROR:', e.message);
   }
 
-  // Fallback
+  // Fallback si todo falla
+  console.log('USING FALLBACK');
   setUser({
     id: userId,
     email: 'test@evnta.mx',
@@ -94,7 +106,6 @@ async function loadProfile(userId: string) {
     createdAt: new Date().toISOString(),
   });
   setIsLoading(false);
-
 }
 
   async function login(email: string, password: string) {
