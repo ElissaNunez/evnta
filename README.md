@@ -11,6 +11,7 @@ VITE_SUPABASE_URL=https://vjniwcvjulljbqbdnhuj.supabase.co
 VITE_SUPABASE_ANON_KEY=tu-anon-key-aqui
 ```
 
+
 Obtén tu ANON_KEY en: Supabase Dashboard -> Project Settings -> API -> anon public
 
 ### 2. Configurar Supabase
