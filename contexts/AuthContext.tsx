@@ -60,43 +60,32 @@ async function loadProfile(userId: string) {
   console.log('LOAD PROFILE', userId);
 
   try {
-    // Usar fetch directo a la API REST de Supabase
-    const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`;
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      },
-    });
+    // Usar supabase.from() directamente - el cliente maneja el token
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle(); // ← .maybeSingle() en lugar de .single()
 
-    console.log('FETCH STATUS', response.status);
+    console.log('SUPABASE DATA', data);
+    console.log('SUPABASE ERROR', error);
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('FETCH DATA', data);
-
-    if (data && data.length > 0) {
-      const profile = data[0];
+    if (data) {
       setUser({
         id: userId,
-        email: profile.email,
-        name: profile.name,
-        role: profile.role || 'cliente',
-        createdAt: profile.created_at || '',
+        email: data.email,
+        name: data.name,
+        role: data.role || 'cliente',
+        createdAt: data.created_at || '',
       });
       setIsLoading(false);
       return;
     }
   } catch (e: any) {
-    console.log('FETCH ERROR:', e.message);
+    console.log('SUPABASE CATCH:', e.message);
   }
 
-  // Fallback si todo falla
+  // Fallback
   console.log('USING FALLBACK');
   setUser({
     id: userId,
