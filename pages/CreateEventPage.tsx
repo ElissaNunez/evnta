@@ -7,6 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+
+import { useEvents } from '@/hooks/useEvents';
+import { useAuth } from '@/contexts/AuthContext';
 
 import { 
   Calendar, MapPin, Users, DollarSign, ArrowRight, 
@@ -78,6 +82,9 @@ const MIN_BUDGET = 10000;
 
 export function CreateEventPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { createEvent } = useEvents(user?.id);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [eventData, setEventData] = useState({
     name: '',
@@ -91,11 +98,54 @@ export function CreateEventPage() {
     description: '',
   });
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      navigate('/cliente/dashboard');
+      // ÚLTIMO PASO: GUARDAR EN SUPABASE
+      if (!user?.id) {
+        toast.error('Debes iniciar sesión para crear un evento');
+        return;
+      }
+
+      if (!eventData.name.trim()) {
+        toast.error('El nombre del evento es obligatorio');
+        setCurrentStep(0);
+        return;
+      }
+      if (!eventData.type) {
+        toast.error('Selecciona un tipo de evento');
+        setCurrentStep(0);
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      try {
+        const newEvent = await createEvent({
+          user_id: user.id,
+          event_name: eventData.name.trim(),
+          event_type: eventData.type as any,
+          event_date: eventData.date || undefined,
+          guest_count: eventData.guestCount,
+          budget: eventData.budget[0],
+          city: eventData.location || undefined,
+          style: eventData.style || undefined,
+          special_requests: eventData.description || undefined,
+        });
+
+        if (newEvent) {
+          toast.success('¡Evento creado exitosamente!');
+          navigate('/cliente/dashboard');
+        } else {
+          toast.error('Error al crear el evento. Revisa la consola.');
+        }
+      } catch (err: any) {
+        console.error(err);
+        toast.error('Error inesperado: ' + err.message);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -269,25 +319,17 @@ export function CreateEventPage() {
                     }`}>
                       <Icon className="w-4 h-4" />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div>
                       <h4 className="font-medium text-sm">{category.name}</h4>
-                      <p className="text-xs text-gray-500 truncate">{category.description}</p>
+                      <p className="text-xs text-gray-500">{category.description}</p>
                     </div>
                     {isSelected && (
-                      <Check className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                      <Check className="w-4 h-4 text-purple-500 ml-auto flex-shrink-0" />
                     )}
                   </button>
                 );
               })}
             </div>
-
-            {eventData.services.length > 0 && (
-              <div className="bg-purple-50 rounded-lg p-3">
-                <p className="text-sm text-purple-700 font-medium">
-                  {eventData.services.length} servicio{eventData.services.length !== 1 ? 's' : ''} seleccionado{eventData.services.length !== 1 ? 's' : ''}
-                </p>
-              </div>
-            )}
           </div>
         );
 
@@ -296,43 +338,49 @@ export function CreateEventPage() {
           <div className="space-y-6">
             <div className="text-center">
               <h3 className="text-lg font-semibold mb-2">¿Cuál es tu presupuesto?</h3>
-              <p className="text-gray-500">Te mostraremos opciones dentro de tu rango</p>
+              <p className="text-gray-500">Ajusta el rango según lo que planeas invertir</p>
             </div>
 
             <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 text-center">
-              <DollarSign className="w-12 h-12 text-purple-600 mx-auto mb-4" />
-              <p className="text-5xl font-bold text-gray-900 mb-2">
-                {formatBudget(eventData.budget[0])}
-              </p>
-              <p className="text-gray-500">MXN</p>
+              <DollarSign className="w-12 h-12 text-purple-500 mx-auto mb-4" />
+              <div className="text-4xl font-bold text-gray-900 mb-2">
+                {formatBudget(eventData.budget[0])} MXN
+              </div>
+              <p className="text-gray-500">Presupuesto estimado</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="px-4">
               <Slider
                 value={eventData.budget}
                 onValueChange={(value) => setEventData({ ...eventData, budget: value })}
                 max={MAX_BUDGET}
                 min={MIN_BUDGET}
                 step={10000}
+                className="w-full"
               />
-              <div className="flex justify-between text-sm text-gray-500">
+              <div className="flex justify-between mt-2 text-sm text-gray-500">
                 <span>{formatBudget(MIN_BUDGET)}</span>
-                <span>{formatBudget(MAX_BUDGET)}+</span>
+                <span>{formatBudget(MAX_BUDGET)}</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-2">
-              {[50000, 100000, 250000, 500000, 750000, 1000000, 1500000, 2000000].map((amount) => (
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Económico', value: 50000 },
+                { label: 'Moderado', value: 150000 },
+                { label: 'Premium', value: 500000 },
+              ].map((option) => (
                 <button
-                  key={amount}
-                  onClick={() => setEventData({ ...eventData, budget: [amount] })}
-                  className={`py-2 px-2 rounded-lg border text-sm transition-colors ${
-                    eventData.budget[0] === amount
-                      ? 'border-purple-500 bg-purple-50 text-purple-700'
+                  key={option.label}
+                  onClick={() => setEventData({ ...eventData, budget: [option.value] })}
+                  className={`p-3 rounded-xl border-2 text-center transition-all ${
+                    eventData.budget[0] === option.value
+                      ? 'border-purple-500 bg-purple-50'
                       : 'border-gray-200 hover:border-purple-200'
                   }`}
                 >
-                  {formatBudget(amount)}
+                  <span className="font-semibold text-sm block">{option.label}</span>
+                  <span className="text-xs text-gray-500">{formatBudget(option.value)}</span>
                 </button>
               ))}
             </div>
@@ -343,28 +391,19 @@ export function CreateEventPage() {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                <Check className="w-8 h-8 text-green-600" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">¡Todo listo!</h3>
-              <p className="text-gray-500">Revisa los detalles de tu evento</p>
+              <h3 className="text-lg font-semibold mb-2">Revisa tu evento</h3>
+              <p className="text-gray-500">Confirma que todo esté correcto antes de crearlo</p>
             </div>
 
-            <div className="bg-white/50 backdrop-blur-sm rounded-xl p-6 space-y-3 border border-white/60">
+            <div className="bg-gray-50 rounded-xl p-6 space-y-4">
               <div className="flex justify-between">
                 <span className="text-gray-500">Nombre</span>
-                <span className="font-medium">{eventData.name || 'Mi evento'}</span>
+                <span className="font-medium">{eventData.name || '—'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Tipo</span>
                 <span className="font-medium">
-                  {eventTypes.find(t => t.id === eventData.type)?.name || 'No seleccionado'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Estilo</span>
-                <span className="font-medium">
-                  {eventStyles.find(s => s.id === eventData.style)?.name || 'No seleccionado'}
+                  {eventTypes.find(t => t.id === eventData.type)?.name || '—'}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -377,29 +416,36 @@ export function CreateEventPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Invitados</span>
-                <span className="font-medium">{eventData.guestCount} personas</span>
+                <span className="font-medium">{eventData.guestCount}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Presupuesto</span>
-                <span className="font-medium text-purple-600">{formatBudget(eventData.budget[0])} MXN</span>
+                <span className="font-medium">{formatBudget(eventData.budget[0])} MXN</span>
               </div>
-              <div className="pt-4 border-t">
-                <span className="text-gray-500">Servicios seleccionados:</span>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {eventData.services.length > 0 ? (
-                    eventData.services.map((serviceId) => {
-                      const category = serviceCategories.find(c => c.id === serviceId);
-                      return (
-                        <Badge key={serviceId} className="bg-purple-100 text-purple-700">
-                          {category?.name}
-                        </Badge>
-                      );
-                    })
-                  ) : (
-                    <span className="text-gray-400 text-sm">Ninguno seleccionado</span>
-                  )}
+              <div className="flex justify-between">
+                <span className="text-gray-500">Estilo</span>
+                <span className="font-medium">
+                  {eventStyles.find(s => s.id === eventData.style)?.name || 'Por definir'}
+                </span>
+              </div>
+              {eventData.services.length > 0 && (
+                <div className="pt-2">
+                  <span className="text-gray-500 block mb-2">Servicios seleccionados</span>
+                  <div className="flex flex-wrap gap-2">
+                    {eventData.services.map(s => (
+                      <Badge key={s} variant="secondary">
+                        {serviceCategories.find(c => c.id === s)?.name || s}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+              {eventData.description && (
+                <div className="pt-2">
+                  <span className="text-gray-500 block mb-1">Descripción</span>
+                  <p className="text-sm text-gray-700">{eventData.description}</p>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -465,19 +511,20 @@ export function CreateEventPage() {
               <Button
                 variant="outline"
                 onClick={handleBack}
-                disabled={currentStep === 0}
+                disabled={currentStep === 0 || isSubmitting}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Atrás
               </Button>
               <Button
                 onClick={handleNext}
+                disabled={isSubmitting}
                 className="bg-gradient-to-r from-purple-600 to-pink-500 text-white"
               >
                 {currentStep === steps.length - 1 ? (
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Crear evento
+                    {isSubmitting ? 'Guardando...' : 'Crear evento'}
                   </>
                 ) : (
                   <>
