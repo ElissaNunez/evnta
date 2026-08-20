@@ -1,542 +1,450 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-
-import { useEvents } from '@/hooks/useEvents';
-import { useAuth } from '@/contexts/AuthContext';
-
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Calendar, MapPin, Users, DollarSign, ArrowRight, 
-  ArrowLeft, Check, Sparkles, Sofa, UtensilsCrossed, 
-  Cake, Palette, Music, Camera, MapPinned, Sparkles as SparklesIcon,
-  Candy, Gift, Laugh, Wind, Mail, Heart, Tent, Castle,
-  Grid3X3, Flame, Church, Scale, Wine, Shirt, Scissors
+  Calendar, Plus, Clock, CheckCircle, 
+  MapPin, MessageSquare, Star, Eye, Wine, 
+  FileText, Percent, CalendarClock, Loader2, Users
 } from 'lucide-react';
-import { serviceCategories, eventStyles } from '@/data/mockData';
+import { useAuth } from '@/contexts/AuthContext';
+import { useEvents } from '@/hooks/useEvents';
 
-const steps = [
-  { id: 'details', title: 'Detalles' },
-  { id: 'style', title: 'Estilo' },
-  { id: 'services', title: 'Servicios' },
-  { id: 'budget', title: 'Presupuesto' },
-  { id: 'review', title: 'Revisar' },
-];
-
-const eventTypes = [
-  { id: 'boda', name: 'Boda', icon: '💒' },
-  { id: 'xv', name: 'XV Años', icon: '👸' },
-  { id: 'cumpleanos', name: 'Cumpleaños', icon: '🎂' },
-  { id: 'baby-shower', name: 'Baby Shower', icon: '🍼' },
-  { id: 'gender-reveal', name: 'Gender Reveal', icon: '🎀' },
-  { id: 'bautizo', name: 'Bautizo', icon: '👶' },
-  { id: 'corporativo', name: 'Corporativo', icon: '💼' },
-  { id: 'empresarial', name: 'Evento Empresarial', icon: '🏢' },
-  { id: 'graduacion', name: 'Graduación', icon: '🎓' },
-  { id: 'inauguracion', name: 'Inauguración', icon: '✂️' },
-  { id: 'infantil', name: 'Infantil', icon: '🎈' },
-  { id: 'festival', name: 'Festival', icon: '🎪' },
-  { id: 'concierto', name: 'Concierto', icon: '🎸' },
-  { id: 'brunch', name: 'Brunch', icon: '🥂' },
-  { id: 'networking', name: 'Networking', icon: '🤝' },
-  { id: 'despedida', name: 'Despedida', icon: '✈️' },
-  { id: 'experiencia-privada', name: 'Experiencia Privada', icon: '🕯️' },
-  { id: 'otro', name: 'Otro', icon: '🎉' },
-];
-
-const serviceIcons: Record<string, React.ElementType> = {
-  mobiliario: Sofa,
-  banquete: UtensilsCrossed,
-  reposteria: Cake,
-  decoracion: Palette,
-  musica: Music,
-  fotografia: Camera,
-  locacion: MapPinned,
-  entretenimiento: SparklesIcon,
-  dulces: Candy,
-  pinatas: Gift,
-  payasos: Laugh,
-  ambientadores: Wind,
-  invitaciones: Mail,
-  souvenirs: Heart,
-  templetes: Tent,
-  brincolines: Castle,
-  losa: Grid3X3,
-  velas: Flame,
-  iglesias: Church,
-  jueces: Scale,
-  cocteleria: Wine,
-  vestuario: Shirt,
-  maquillaje: SparklesIcon,
-  barberia: Scissors,
-};
-
-const MAX_BUDGET = 2000000;
-const MIN_BUDGET = 10000;
-
-export function CreateEventPage() {
-  const navigate = useNavigate();
+export function ClientDashboard() {
   const { user } = useAuth();
-  const { createEvent } = useEvents(user?.id);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [eventData, setEventData] = useState({
-    name: '',
-    type: '',
-    date: '',
-    location: '',
-    guestCount: 50,
-    budget: [100000],
-    services: [] as string[],
-    style: '',
-    description: '',
-  });
+  const { events: myEvents, loading } = useEvents(user?.id);
+  
+  const activeEvents = myEvents.filter(e => e.status === 'published' || e.status === 'in_progress');
+  const pendingEvents = myEvents.filter(e => e.status === 'draft');
 
-  const handleNext = async () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      // ÚLTIMO PASO: GUARDAR EN SUPABASE
-      if (!user?.id) {
-        toast.error('Debes iniciar sesión para crear un evento');
-        return;
-      }
+  // Mock appointments (feature futura)
+  const myAppointments = [
+    { id: '1', providerName: 'Banquetes Delicias', type: 'tasting', date: '2024-05-01', status: 'completed' },
+    { id: '2', providerName: 'Florería Rosas & Más', type: 'decoration_viewing', date: '2024-05-15', status: 'confirmed' },
+  ];
 
-      if (!eventData.name.trim()) {
-        toast.error('El nombre del evento es obligatorio');
-        setCurrentStep(0);
-        return;
-      }
-      if (!eventData.type) {
-        toast.error('Selecciona un tipo de evento');
-        setCurrentStep(0);
-        return;
-      }
+  // Mock deposits (feature futura)
+  const myDeposits = [
+    { id: '1', providerName: 'DJ Carlos Events', service: 'Paquete DJ Premium', amount: 1950, total: 6500, status: 'paid' },
+  ];
 
-      setIsSubmitting(true);
+  const stats = [
+    { label: 'Eventos activos', value: activeEvents.length, icon: Calendar, color: 'bg-purple-100 text-purple-600' },
+    { label: 'Pendientes', value: pendingEvents.length, icon: Clock, color: 'bg-yellow-100 text-yellow-600' },
+    { label: 'Completados', value: myEvents.filter(e => e.status === 'completed').length, icon: CheckCircle, color: 'bg-green-100 text-green-600' },
+    { label: 'Citas agendadas', value: myAppointments.length, icon: CalendarClock, color: 'bg-blue-100 text-blue-600' },
+  ];
 
-      try {
-        const newEvent = await createEvent({
-          user_id: user.id,
-          event_name: eventData.name.trim(),
-          event_type: eventData.type as any,
-          event_date: eventData.date || undefined,
-          guest_count: eventData.guestCount,
-          budget: eventData.budget[0],
-          city: eventData.location || undefined,
-          style: eventData.style || undefined,
-          special_requests: eventData.description || undefined,
-        });
-
-        if (newEvent) {
-          toast.success('¡Evento creado exitosamente!');
-          navigate('/cliente/dashboard');
-        } else {
-          toast.error('Error al crear el evento. Revisa la consola.');
-        }
-      } catch (err: any) {
-        console.error(err);
-        toast.error('Error inesperado: ' + err.message);
-      } finally {
-        setIsSubmitting(false);
-      }
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'draft': return 'Borrador';
+      case 'published': return 'Publicado';
+      case 'in_progress': return 'En progreso';
+      case 'completed': return 'Completado';
+      case 'cancelled': return 'Cancelado';
+      default: return status;
     }
   };
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'published':
+      case 'in_progress': return 'bg-green-100 text-green-700';
+      case 'draft': return 'bg-yellow-100 text-yellow-700';
+      case 'completed': return 'bg-blue-100 text-blue-700';
+      case 'cancelled': return 'bg-red-100 text-red-700';
+      default: return 'bg-gray-100 text-gray-700';
     }
   };
 
-  const toggleService = (serviceId: string) => {
-    setEventData(prev => ({
-      ...prev,
-      services: prev.services.includes(serviceId)
-        ? prev.services.filter(s => s !== serviceId)
-        : [...prev.services, serviceId]
-    }));
-  };
-
-  const formatBudget = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`;
-    }
-    if (value >= 1000) {
-      return `$${(value / 1000).toFixed(0)}k`;
-    }
-    return `$${value}`;
-  };
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label>Nombre del evento</Label>
-              <Input
-                placeholder="Ej: Boda de María y Juan"
-                value={eventData.name}
-                onChange={(e) => setEventData({ ...eventData, name: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Tipo de evento</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {eventTypes.map((type) => (
-                  <button
-                    key={type.id}
-                    onClick={() => setEventData({ ...eventData, type: type.id })}
-                    className={`p-4 rounded-xl border-2 transition-all text-center ${
-                      eventData.type === type.id
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-gray-200 hover:border-purple-200'
-                    }`}
-                  >
-                    <span className="text-2xl mb-1 block">{type.icon}</span>
-                    <span className="font-medium text-xs">{type.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Fecha del evento</Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    type="date"
-                    className="pl-10"
-                    value={eventData.date}
-                    onChange={(e) => setEventData({ ...eventData, date: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Ubicación / Ciudad</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    placeholder="Ej: Ciudad de México"
-                    className="pl-10"
-                    value={eventData.location}
-                    onChange={(e) => setEventData({ ...eventData, location: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Número de invitados</Label>
-              <div className="flex items-center gap-4">
-                <Users className="w-5 h-5 text-gray-400" />
-                <Slider
-                  value={[eventData.guestCount]}
-                  onValueChange={(value) => setEventData({ ...eventData, guestCount: value[0] })}
-                  max={500}
-                  min={10}
-                  step={10}
-                  className="flex-1"
-                />
-                <span className="w-16 text-right font-medium">{eventData.guestCount}</span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Descripción adicional (opcional)</Label>
-              <Textarea
-                placeholder="Cuéntanos más sobre tu evento..."
-                value={eventData.description}
-                onChange={(e) => setEventData({ ...eventData, description: e.target.value })}
-                rows={3}
-              />
-            </div>
-          </div>
-        );
-
-      case 1:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold mb-2">¿Qué estilo buscas?</h3>
-              <p className="text-gray-500">Selecciona el estilo que mejor represente tu evento</p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {eventStyles.map((style) => (
-                <button
-                  key={style.id}
-                  onClick={() => setEventData({ ...eventData, style: style.id })}
-                  className={`p-4 rounded-xl border-2 transition-all text-center ${
-                    eventData.style === style.id
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 hover:border-purple-200'
-                  }`}
-                >
-                  <span className="text-3xl mb-2 block">{style.icon}</span>
-                  <h4 className="font-medium text-sm">{style.name}</h4>
-                  <p className="text-xs text-gray-500 mt-1">{style.description}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold mb-2">¿Qué servicios necesitas?</h3>
-              <p className="text-gray-500">Selecciona todos los que apliquen</p>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
-              {serviceCategories.map((category) => {
-                const Icon = serviceIcons[category.id] || SparklesIcon;
-                const isSelected = eventData.services.includes(category.id);
-                
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => toggleService(category.id)}
-                    className={`p-3 rounded-xl border-2 transition-all text-left flex items-start gap-3 ${
-                      isSelected
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-gray-200 hover:border-purple-200'
-                    }`}
-                  >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      isSelected ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-sm">{category.name}</h4>
-                      <p className="text-xs text-gray-500">{category.description}</p>
-                    </div>
-                    {isSelected && (
-                      <Check className="w-4 h-4 text-purple-500 ml-auto flex-shrink-0" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold mb-2">¿Cuál es tu presupuesto?</h3>
-              <p className="text-gray-500">Ajusta el rango según lo que planeas invertir</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 text-center">
-              <DollarSign className="w-12 h-12 text-purple-500 mx-auto mb-4" />
-              <div className="text-4xl font-bold text-gray-900 mb-2">
-                {formatBudget(eventData.budget[0])} MXN
-              </div>
-              <p className="text-gray-500">Presupuesto estimado</p>
-            </div>
-
-            <div className="px-4">
-              <Slider
-                value={eventData.budget}
-                onValueChange={(value) => setEventData({ ...eventData, budget: value })}
-                max={MAX_BUDGET}
-                min={MIN_BUDGET}
-                step={10000}
-                className="w-full"
-              />
-              <div className="flex justify-between mt-2 text-sm text-gray-500">
-                <span>{formatBudget(MIN_BUDGET)}</span>
-                <span>{formatBudget(MAX_BUDGET)}</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: 'Económico', value: 50000 },
-                { label: 'Moderado', value: 150000 },
-                { label: 'Premium', value: 500000 },
-              ].map((option) => (
-                <button
-                  key={option.label}
-                  onClick={() => setEventData({ ...eventData, budget: [option.value] })}
-                  className={`p-3 rounded-xl border-2 text-center transition-all ${
-                    eventData.budget[0] === option.value
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 hover:border-purple-200'
-                  }`}
-                >
-                  <span className="font-semibold text-sm block">{option.label}</span>
-                  <span className="text-xs text-gray-500">{formatBudget(option.value)}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold mb-2">Revisa tu evento</h3>
-              <p className="text-gray-500">Confirma que todo esté correcto antes de crearlo</p>
-            </div>
-
-            <div className="bg-gray-50 rounded-xl p-6 space-y-4">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Nombre</span>
-                <span className="font-medium">{eventData.name || '—'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Tipo</span>
-                <span className="font-medium">
-                  {eventTypes.find(t => t.id === eventData.type)?.name || '—'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Fecha</span>
-                <span className="font-medium">{eventData.date || 'Por definir'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Ubicación</span>
-                <span className="font-medium">{eventData.location || 'Por definir'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Invitados</span>
-                <span className="font-medium">{eventData.guestCount}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Presupuesto</span>
-                <span className="font-medium">{formatBudget(eventData.budget[0])} MXN</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Estilo</span>
-                <span className="font-medium">
-                  {eventStyles.find(s => s.id === eventData.style)?.name || 'Por definir'}
-                </span>
-              </div>
-              {eventData.services.length > 0 && (
-                <div className="pt-2">
-                  <span className="text-gray-500 block mb-2">Servicios seleccionados</span>
-                  <div className="flex flex-wrap gap-2">
-                    {eventData.services.map(s => (
-                      <Badge key={s} variant="secondary">
-                        {serviceCategories.find(c => c.id === s)?.name || s}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {eventData.description && (
-                <div className="pt-2">
-                  <span className="text-gray-500 block mb-1">Descripción</span>
-                  <p className="text-sm text-gray-700">{eventData.description}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
+  const getAppointmentIcon = (type: string) => {
+    switch (type) {
+      case 'tasting': return Wine;
+      case 'venue_visit': return Eye;
+      case 'decoration_viewing': return Eye;
+      default: return CalendarClock;
     }
   };
+
+  const getAppointmentLabel = (type: string) => {
+    switch (type) {
+      case 'tasting': return 'Degustación';
+      case 'venue_visit': return 'Visita al lugar';
+      case 'decoration_viewing': return 'Ver decoración';
+      default: return 'Consulta';
+    }
+  };
+
+  const totalBudget = myEvents.reduce((acc, e) => acc + (e.budget || 0), 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+        <span className="ml-3 text-gray-600">Cargando tus eventos...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-transparent py-8 pt-24">
-      <div className="max-w-2xl mx-auto px-4">
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            {steps.map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-xs sm:text-sm ${
-                  index <= currentStep
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white'
-                    : 'bg-gray-200 text-gray-500'
-                }`}>
-                  {index < currentStep ? (
-                    <Check className="w-4 h-4 sm:w-5 sm:h-5" />
-                  ) : (
-                    index + 1
-                  )}
-                </div>
-                {index < steps.length - 1 && (
-                  <div className={`w-4 sm:w-10 h-1 mx-1 ${
-                    index < currentStep ? 'bg-purple-500' : 'bg-gray-200'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between mt-2">
-            {steps.map((step, index) => (
-              <span 
-                key={step.id} 
-                className={`text-[10px] sm:text-xs ${
-                  index <= currentStep ? 'text-purple-600 font-medium' : 'text-gray-400'
-                }`}
-              >
-                {step.title}
-              </span>
-            ))}
-          </div>
+    <div className="space-y-8">
+      {/* Welcome Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            ¡Hola, {user?.name?.split(' ')[0] || 'Usuario'}!
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Aquí está el resumen de tus eventos
+          </p>
         </div>
-
-        <Card className="border-0 shadow-xl bg-white/70 backdrop-blur-md">
-          <CardHeader>
-            <CardTitle>{steps[currentStep].title}</CardTitle>
-            <CardDescription>
-              Paso {currentStep + 1} de {steps.length}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {renderStepContent()}
-
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8">
-              <Button
-                variant="outline"
-                onClick={handleBack}
-                disabled={currentStep === 0 || isSubmitting}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Atrás
-              </Button>
-              <Button
-                onClick={handleNext}
-                disabled={isSubmitting}
-                className="bg-gradient-to-r from-purple-600 to-pink-500 text-white"
-              >
-                {currentStep === steps.length - 1 ? (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {isSubmitting ? 'Guardando...' : 'Crear evento'}
-                  </>
-                ) : (
-                  <>
-                    Siguiente
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <Link to="/crear-evento">
+          <Button className="bg-gradient-to-r from-purple-600 to-pink-500 text-white">
+            <Plus className="w-4 h-4 mr-2" />
+            Crear nuevo evento
+          </Button>
+        </Link>
       </div>
+
+      {/* Stats Grid */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat) => (
+          <Card key={stat.label} className="border-0 shadow-md hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-xl ${stat.color} flex items-center justify-center`}>
+                  <stat.icon className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="text-sm text-gray-500">{stat.label}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="events" className="space-y-6">
+        <TabsList className="bg-gray-100 p-1">
+          <TabsTrigger value="events" className="data-[state=active]:bg-white">
+            <Calendar className="w-4 h-4 mr-2" />
+            Mis Eventos
+          </TabsTrigger>
+          <TabsTrigger value="appointments" className="data-[state=active]:bg-white">
+            <CalendarClock className="w-4 h-4 mr-2" />
+            Citas
+          </TabsTrigger>
+          <TabsTrigger value="deposits" className="data-[state=active]:bg-white">
+            <Percent className="w-4 h-4 mr-2" />
+            Apartados
+          </TabsTrigger>
+          <TabsTrigger value="contracts" className="data-[state=active]:bg-white">
+            <FileText className="w-4 h-4 mr-2" />
+            Contratos
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="events" className="space-y-6">
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* My Events */}
+            <div className="lg:col-span-2 space-y-6">
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xl">Mis eventos</CardTitle>
+                    <Link to="/crear-evento">
+                      <Button variant="ghost" size="sm">Crear nuevo</Button>
+                    </Link>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {myEvents.length > 0 ? (
+                    <div className="space-y-4">
+                      {myEvents.map((event) => (
+                        <div 
+                          key={event.id}
+                          className="p-4 rounded-xl border border-gray-100 hover:border-purple-200 hover:shadow-md transition-all"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h4 className="font-semibold text-gray-900">{event.event_name}</h4>
+                              <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 flex-wrap">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-4 h-4" />
+                                  {event.event_date 
+                                    ? new Date(event.event_date).toLocaleDateString('es-MX', { 
+                                        day: 'numeric', 
+                                        month: 'short', 
+                                        year: 'numeric' 
+                                      })
+                                    : 'Sin fecha'
+                                  }
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="w-4 h-4" />
+                                  {event.city || 'Sin ubicación'}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Users className="w-4 h-4" />
+                                  {event.guest_count || 0} invitados
+                                </span>
+                              </div>
+                            </div>
+                            <Badge className={getStatusColor(event.status)}>
+                              {getStatusLabel(event.status)}
+                            </Badge>
+                          </div>
+
+                          <div className="flex items-center justify-between text-sm mb-2">
+                            <span className="text-gray-600">Presupuesto</span>
+                            <span className="font-medium text-purple-600">
+                              ${(event.budget || 0).toLocaleString()} MXN
+                            </span>
+                          </div>
+
+                          {event.style && (
+                            <div className="flex items-center gap-2 flex-wrap mt-2">
+                              <Badge variant="secondary" className="bg-purple-50 text-purple-700">
+                                Estilo: {event.style}
+                              </Badge>
+                              {event.event_type && (
+                                <Badge variant="secondary" className="bg-pink-50 text-pink-700">
+                                  {event.event_type}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-4">
+                        <Calendar className="w-8 h-8 text-purple-600" />
+                      </div>
+                      <h4 className="font-semibold text-gray-900 mb-2">No tienes eventos aún</h4>
+                      <p className="text-gray-500 mb-4">Crea tu primer evento y encuentra los mejores proveedores</p>
+                      <Link to="/crear-evento">
+                        <Button className="bg-gradient-to-r from-purple-600 to-pink-500 text-white">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Crear evento
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Quick Actions */}
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-lg">Acciones rápidas</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Link to="/crear-evento">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nuevo evento
+                    </Button>
+                  </Link>
+                  <Link to="/explorar">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Star className="w-4 h-4 mr-2" />
+                      Explorar proveedores
+                    </Button>
+                  </Link>
+                  <Link to="/cliente/mensajes">
+                    <Button variant="outline" className="w-full justify-start">
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Mensajes
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+
+              {/* Budget Summary */}
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-lg">Resumen de gastos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Total presupuestado</span>
+                      <span className="font-semibold">
+                        ${totalBudget.toLocaleString()} MXN
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Eventos creados</span>
+                      <span className="font-semibold text-purple-600">
+                        {myEvents.length}
+                      </span>
+                    </div>
+                    <div className="h-px bg-gray-200" />
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Próximo evento</span>
+                      <span className="font-bold text-green-600">
+                        {myEvents.length > 0 && myEvents[0]?.event_date
+                          ? new Date(myEvents[0].event_date).toLocaleDateString('es-MX', {
+                              day: 'numeric', month: 'short'
+                            })
+                          : '—'
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="appointments" className="space-y-6">
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl">Mis citas agendadas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {myAppointments.length > 0 ? (
+                <div className="space-y-4">
+                  {myAppointments.map((appointment) => {
+                    const Icon = getAppointmentIcon(appointment.type);
+                    return (
+                      <div 
+                        key={appointment.id}
+                        className="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-purple-200 transition-all"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
+                            <Icon className="w-6 h-6 text-purple-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{appointment.providerName}</h4>
+                            <p className="text-sm text-gray-500">{getAppointmentLabel(appointment.type)}</p>
+                            <p className="text-sm text-gray-400">{appointment.date}</p>
+                          </div>
+                        </div>
+                        <Badge className={
+                          appointment.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                          appointment.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }>
+                          {appointment.status === 'confirmed' ? 'Confirmada' :
+                           appointment.status === 'completed' ? 'Completada' : 'Pendiente'}
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <CalendarClock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No tienes citas agendadas</p>
+                  <Link to="/explorar">
+                    <Button variant="outline" className="mt-4">
+                      Explorar proveedores
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="deposits" className="space-y-6">
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl">Mis apartados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {myDeposits.length > 0 ? (
+                <div className="space-y-4">
+                  {myDeposits.map((deposit) => (
+                    <div 
+                      key={deposit.id}
+                      className="p-4 rounded-xl border border-gray-100 hover:border-purple-200 transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{deposit.providerName}</h4>
+                          <p className="text-sm text-gray-500">{deposit.service}</p>
+                        </div>
+                        <Badge className="bg-green-100 text-green-700">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Pagado
+                        </Badge>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Total del servicio:</span>
+                          <span className="font-medium">${deposit.total.toLocaleString()} MXN</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Apartado (30%):</span>
+                          <span className="font-bold text-purple-600">${deposit.amount.toLocaleString()} MXN</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Restante:</span>
+                          <span className="font-medium">${(deposit.total - deposit.amount).toLocaleString()} MXN</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Percent className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No tienes apartados activos</p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Los apartados te permiten separar tu fecha con solo el 30%
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="contracts" className="space-y-6">
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl">Contratos digitales</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <FileText className="w-16 h-16 text-purple-100 mx-auto mb-4" />
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">Contratos seguros</h4>
+                <p className="text-gray-500 max-w-md mx-auto mb-6">
+                  Todos los contratos en EVNTA son digitales, con firma electrónica 
+                  y respaldo legal para tu protección.
+                </p>
+                <div className="flex flex-wrap justify-center gap-4">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    Firma digital segura
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    Términos claros
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    Respaldo legal
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
+ç
