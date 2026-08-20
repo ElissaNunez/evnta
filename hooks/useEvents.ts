@@ -12,6 +12,7 @@ export interface EventRecord {
   city: string;
   style: string;
   status: string;
+  special_requests?: string;
   created_at: string;
 }
 
@@ -20,7 +21,11 @@ export function useEvents(userId?: string) {
   const [loading, setLoading] = useState(true);
 
   const fetchEvents = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      setEvents([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const { data, error } = await supabase
       .from('events')
@@ -28,7 +33,12 @@ export function useEvents(userId?: string) {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
-    if (!error) setEvents(data || []);
+    if (error) {
+      console.error('Error fetching events:', error);
+      setEvents([]);
+    } else {
+      setEvents(data || []);
+    }
     setLoading(false);
   }, [userId]);
 
@@ -45,6 +55,7 @@ export function useEvents(userId?: string) {
     budget?: number;
     city?: string;
     style?: string;
+    special_requests?: string;
   }) => {
     const { data, error } = await supabase
       .from('events')
